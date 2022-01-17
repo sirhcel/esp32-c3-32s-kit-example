@@ -8,6 +8,13 @@ use log::*;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
 use esp_idf_hal::peripherals::Peripherals;
 
+use esp_idf_hal::ledc::{
+    config::TimerConfig,
+    Channel,
+    Timer,
+};
+use esp_idf_hal::prelude::*;
+
 fn main() -> Result<()> {
     // Temporary. Will disappear once ESP-IDF 4.4 is released, but for now it is necessary to call this function once,
     // or else some patches to the runtime implemented by esp-idf-sys might not link properly.
@@ -21,12 +28,18 @@ fn main() -> Result<()> {
     let peripherals = Peripherals::take().unwrap();
     let pins = peripherals.pins;
 
-    let mut red_led = pins.gpio3.into_output()?;
+    // let mut red_led = pins.gpio3.into_output()?;
     let mut green_led = pins.gpio4.into_output()?;
     let mut blue_led = pins.gpio5.into_output()?;
     let mut amber_led = pins.gpio18.into_output()?;
     let mut white_led = pins.gpio19.into_output()?;
     let button = pins.gpio9.into_input().expect("Built-in button failed");
+
+    // experimental esp_idf_hal PWM: Create a 25 kHz PWM signal with 25 % duty cycle on red led
+    let config = TimerConfig::default().frequency(25.kHz().into());
+    let timer = Timer::new(peripherals.ledc.timer0, &config)?;
+    let channel = Channel::new(peripherals.ledc.channel0, &timer, peripherals.pins.gpio3)?;
+    channel.set_duty(64);
 
     loop {
         amber_led.set_high()?;
@@ -35,9 +48,9 @@ fn main() -> Result<()> {
         white_led.set_high()?;
         thread::sleep(Duration::from_millis(1000));
         white_led.set_low()?;
-        red_led.set_high()?;
-        thread::sleep(Duration::from_millis(1000));
-        red_led.set_low()?;
+        // red_led.set_high()?;
+        // thread::sleep(Duration::from_millis(1000));
+        // red_led.set_low()?;
         green_led.set_high()?;
         thread::sleep(Duration::from_millis(1000));
         green_led.set_low()?;
