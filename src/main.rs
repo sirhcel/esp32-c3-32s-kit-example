@@ -5,7 +5,8 @@ use std::time::Duration;
 use anyhow::*;
 use log::*;
 
-use embedded_hal::digital::v2::{InputPin, OutputPin};
+use embedded_hal::digital::blocking::{InputPin, OutputPin};
+use embedded_hal::pwm::blocking::PwmPin;
 use esp_idf_hal::peripherals::Peripherals;
 
 use esp_idf_hal::ledc::{
@@ -38,8 +39,8 @@ fn main() -> Result<()> {
     // experimental esp_idf_hal PWM: Create a 25 kHz PWM signal with 25 % duty cycle on red led
     let config = TimerConfig::default().frequency(25.kHz().into());
     let timer = Timer::new(peripherals.ledc.timer0, &config)?;
-    let channel = Channel::new(peripherals.ledc.channel0, &timer, peripherals.pins.gpio3)?;
-    channel.set_duty(64);
+    let mut channel = Channel::new(peripherals.ledc.channel0, &timer, pins.gpio3)?;
+    channel.set_duty(64)?;
 
     loop {
         amber_led.set_high()?;
